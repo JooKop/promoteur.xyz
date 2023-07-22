@@ -20,9 +20,6 @@ export default function PromotionCellView({
         <div className="text-xs text-zinc-500">
           Recipients: {promotion.recipients}
         </div>
-        <div className="text-xs text-zinc-500">
-          Replies: {promotion.replies}
-        </div>
         <div className="text-xs text-zinc-500">Clicks: {promotion.clicks}</div>
       </div>
     </div>
