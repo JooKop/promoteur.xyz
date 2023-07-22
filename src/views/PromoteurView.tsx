@@ -1,4 +1,4 @@
-import { ReactElement, useState } from "react";
+import { ReactElement, useState, useEffect } from "react";
 import ConversationListView from "./ConversationListView";
 import PromotionListView from "./PromotionListView";
 import { useClient, useSetClient } from "../hooks/useClient";
@@ -8,6 +8,9 @@ import Header from "../components/Header";
 import { useDisconnect } from "wagmi";
 import Button from "@mui/material/Button";
 import Modal from "react-modal";
+import { fetchQuery } from "@airstack/airstack-react";
+
+import { init, useLazyQuery } from "@airstack/airstack-react";
 
 const customStyles = {
   content: {
@@ -18,11 +21,41 @@ const customStyles = {
     marginRight: "-50%",
     transform: "translate(-50%, -50%)",
     backgroundColor: "white",
-    width: 400,
+    width: 600,
   },
 };
 
-const accounts = ["0x2352034923", "0x2334323423", "0x123456788"];
+const nftQuery = `
+query TokenHoldersAndImages {
+  TokenNfts(
+    input: {filter: {address: {_eq: "$ADDRESS"}}, blockchain: ethereum, limit: 200}
+  ) {
+    TokenNft {
+      tokenBalances {
+        owner {
+          addresses
+        }
+      }
+    }
+  }
+}
+`;
+//0x88b40592ce79a76eb14fec1ef9d21fbefcd9dffa
+const xmtpEnabledQuery = `
+query BulkFetchPrimaryENSandXMTP($address: [Identity!]) {
+  XMTPs(input: {blockchain: ALL, limit: 200, filter: {owner: {_in: $address}}}) {
+    XMTP {
+      isXMTPEnabled
+      owner {
+        addresses
+        primaryDomain {
+          name
+        }
+      }
+    }
+  }
+}
+`;
 
 export default function PromoteurView(): ReactElement {
   const client = useClient()!;
@@ -30,6 +63,12 @@ export default function PromoteurView(): ReactElement {
   const [modalOpen, setModalOpen] = useState(false);
   const [sendingModalOpen, setSendingModalOpen] = useState(false);
   const [checkedAccounts, setCheckedAccounts] = useState([]);
+  const [accounts, setAccounts] = useState([]);
+  const [searchAddress, setSearchAddress] = useState("");
+
+  //Airstack
+  init("8ff50c9197574148b92d2b0b44c9cd9e");
+  const variables = {};
 
   function copy() {
     navigator.clipboard.writeText(client.address);
@@ -48,6 +87,42 @@ export default function PromoteurView(): ReactElement {
       updatedList.splice(checkedAccounts.indexOf(event.target.value), 1);
     }
     setCheckedAccounts(updatedList);
+  };
+
+  const handleSearch = async (event: any) => {
+    const { data, error } = await fetchQuery(
+      nftQuery.replace("$ADDRESS", searchAddress)
+    );
+    let accountList = [];
+    let xmtpVariables = {};
+    if (data != null) {
+      //Data has been retrieved. Fill accounts.
+      const userList = data.TokenNfts?.TokenNft;
+
+      if (userList?.length > 0) {
+        accountList = userList.map((user: any) => {
+          return user.tokenBalances[0].owner.addresses[0];
+        });
+        //Now figure out which of these have xmtp enabled
+        const xmtpVariables = { address: accountList };
+        console.log("Lengthi: " + accountList.length);
+        const { data, error } = await fetchQuery(
+          xmtpEnabledQuery,
+          xmtpVariables
+        );
+
+        const xmtpList = data.XMTPs?.XMTP;
+
+        if (xmtpList.length > 0) {
+          const accountList = xmtpList.map((user: any) => {
+            return user.owner.addresses[0];
+          });
+          setAccounts(accountList);
+        }
+      } else {
+        setAccounts([]);
+      }
+    }
   };
 
   const { disconnectAsync } = useDisconnect();
@@ -103,20 +178,33 @@ export default function PromoteurView(): ReactElement {
           <p className="text-black">Name:</p>
           <input className="border-2 border-black text-black p-2"></input>
           <p className="text-black">Targeting:</p>
-          <label className="text-black">
-            <input type="radio" name="filter" value="nft" />
-            NFT
-          </label>
-          <label className="text-black">
-            <input type="radio" name="filter" value="poap" />
-            POAP
-          </label>
+          <div className="flex flex-row">
+            <label className="text-black">
+              <input className="mr-1" type="radio" name="filter" value="nft" />
+              NFT
+            </label>
+            <label className="text-black">
+              <input
+                className="ml-4 mr-1"
+                type="radio"
+                name="filter"
+                value="poap"
+              />
+              POAP
+            </label>
+          </div>
           <p className="text-black">Address:</p>
-          <input className="border-2 border-black text-black p-2"></input>
-          <Button className="mt-2" variant="contained">
+          <input
+            onChange={(e) => setSearchAddress(e.target.value)}
+            className="border-2 border-black text-black p-2"
+          ></input>
+          <Button className="mt-2" variant="contained" onClick={handleSearch}>
             Search
           </Button>
-          <p className="text-black">List of accounts:</p>
+
+          <p className="text-black">
+            List of accounts with XMTP enabled ({accounts.length}x):
+          </p>
           <div className="border-2 h-32 overflow-y-auto">
             <ul>
               {accounts
@@ -166,9 +254,10 @@ export default function PromoteurView(): ReactElement {
         style={customStyles}
       >
         <div className="flex flex-col text-black">
+          <p>Sending promotion to:</p>
           <p>
             {checkedAccounts.map((account, i) => {
-              return <p>Sending promotion to: {account}</p>;
+              return <p>{account}</p>;
             })}
           </p>
           <Button
