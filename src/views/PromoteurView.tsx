@@ -13,6 +13,7 @@ import { fetchQuery } from "@airstack/airstack-react";
 import { sendMessage } from "../model/messages";
 import { startConversation } from "../model/conversations";
 import { ContentTypeText } from "@xmtp/xmtp-js";
+import uuid from "react-uuid";
 
 import { init, useLazyQuery } from "@airstack/airstack-react";
 
@@ -71,6 +72,21 @@ export default function PromoteurView(): ReactElement {
   const [searchAddress, setSearchAddress] = useState("");
   const [promotionMessage, setPromotionMessage] = useState("");
   const [promotionLink, setPromotionLink] = useState("");
+  const [promotionName, setPromotionName] = useState("");
+  const [promotions, setPromotions] = useState([]);
+  const [promotionsLoaded, setPromotionsLoaded] = useState(false);
+
+  const getPromotionList = () => {
+    // Fetch all promotions
+    fetch("http://localhost:5050/promotions")
+      .then((response) => response.json())
+      .then((data) => setPromotions(data));
+  };
+
+  if (!promotionsLoaded) {
+    getPromotionList();
+    setPromotionsLoaded(true);
+  }
 
   //Airstack
   init("8ff50c9197574148b92d2b0b44c9cd9e");
@@ -84,16 +100,43 @@ export default function PromoteurView(): ReactElement {
     }, 2000);
   }
 
+  const createPromotion = (uid, name, recipients, link) => {
+    const requestOptions = {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        uuid: uid,
+        name: name,
+        recipients: recipients,
+        link: link,
+      }),
+    };
+    fetch("http://localhost:5050/new", requestOptions)
+      .then((response) => response.json())
+      .then((data) => {
+        console.log("returned: " + data.success);
+        getPromotionList();
+      });
+  };
+
   // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
-  const sendMessages = async () => {
+  const sendMessages = async (uid) => {
     checkedAccounts.forEach(async (account) => {
-      console.log("Starting conversation with " + account);
       const conversation = await startConversation(client, account);
+      console.log("Convo: " + conversation);
       console.log("Sending message to " + account);
+      console.log(
+        "Starting conversation with " +
+          conversation.id?.toString() +
+          ", " +
+          conversation.topic +
+          ", " +
+          conversation.title
+      );
       await sendMessage(
         client,
         conversation,
-        promotionMessage.replace("$link", promotionLink),
+        promotionMessage.replace("$link", "http://localhost:5050/go/" + uid),
         ContentTypeText
       );
     });
@@ -181,7 +224,10 @@ export default function PromoteurView(): ReactElement {
           <div className="pl-10 flex flex-col">
             <small className="flex justify-between"></small>
             All promotions
-            <PromotionListView />
+            <Button variant="contained" onClick={getPromotionList}>
+              Refresh
+            </Button>
+            <PromotionListView promotions={promotions} />
             <Button onClick={setModalOpen} variant="contained">
               New Promotion
             </Button>
@@ -197,7 +243,10 @@ export default function PromoteurView(): ReactElement {
       >
         <div className="flex flex-col">
           <p className="text-black">Name:</p>
-          <input className="border-2 border-black text-black p-2"></input>
+          <input
+            onChange={(e) => setPromotionName(e.target.value)}
+            className="border-2 border-black text-black p-2"
+          ></input>
           <p className="text-black">Targeting:</p>
           <div className="flex flex-row">
             <label className="text-black">
@@ -260,9 +309,16 @@ export default function PromoteurView(): ReactElement {
             <Button
               variant="contained"
               onClick={() => {
+                const uid = uuid();
                 setModalOpen(false);
                 setSendingModalOpen(true);
-                sendMessages();
+                createPromotion(
+                  uid,
+                  promotionName,
+                  checkedAccounts.length,
+                  promotionLink
+                );
+                sendMessages(uid);
               }}
             >
               Create Promotion
