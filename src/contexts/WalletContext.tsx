@@ -24,7 +24,7 @@ const { connectors } = getDefaultWallets({
 });
 
 const wagmiClient = createClient({
-  autoConnect: true,
+  autoConnect: false,
   connectors,
   provider,
   webSocketProvider,
@@ -51,7 +51,7 @@ function WalletSetter({
       (async () => {
         try {
           const client = await Client.create(signer, {
-            env: "dev",
+            env: "production",
           });
           client.enableGroupChat();
 
