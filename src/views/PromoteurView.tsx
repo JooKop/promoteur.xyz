@@ -6,7 +6,7 @@ import { shortAddress } from "../util/shortAddress";
 import { Link } from "react-router-dom";
 import Header from "../components/Header";
 import { useDisconnect } from "wagmi";
-import Button from "../components/Button";
+import Button from "@mui/material/Button";
 import Modal from "react-modal";
 
 const customStyles = {
@@ -28,6 +28,8 @@ export default function PromoteurView(): ReactElement {
   const client = useClient()!;
   const [copied, setCopied] = useState(false);
   const [modalOpen, setModalOpen] = useState(false);
+  const [sendingModalOpen, setSendingModalOpen] = useState(false);
+  const [checkedAccounts, setCheckedAccounts] = useState([]);
 
   function copy() {
     navigator.clipboard.writeText(client.address);
@@ -36,6 +38,17 @@ export default function PromoteurView(): ReactElement {
       setCopied(false);
     }, 2000);
   }
+
+  // Add/Remove checked item from list
+  const handleCheckedAccounts = (event: any) => {
+    var updatedList = [...checkedAccounts];
+    if (event.target.checked) {
+      updatedList = [...checkedAccounts, event.target.value];
+    } else {
+      updatedList.splice(checkedAccounts.indexOf(event.target.value), 1);
+    }
+    setCheckedAccounts(updatedList);
+  };
 
   const { disconnectAsync } = useDisconnect();
   const setClient = useSetClient();
@@ -73,7 +86,7 @@ export default function PromoteurView(): ReactElement {
             <small className="flex justify-between"></small>
             All promotions
             <PromotionListView />
-            <Button onClick={setModalOpen} type="button">
+            <Button onClick={setModalOpen} variant="contained">
               New Promotion
             </Button>
           </div>
@@ -89,7 +102,7 @@ export default function PromoteurView(): ReactElement {
         <div className="flex flex-col">
           <p className="text-black">Name:</p>
           <input className="border-2 border-black text-black p-2"></input>
-          <p className="text-black">Filter:</p>
+          <p className="text-black">Targeting:</p>
           <label className="text-black">
             <input type="radio" name="filter" value="nft" />
             NFT
@@ -100,7 +113,7 @@ export default function PromoteurView(): ReactElement {
           </label>
           <p className="text-black">Address:</p>
           <input className="border-2 border-black text-black p-2"></input>
-          <Button className="mt-2" type="button">
+          <Button className="mt-2" variant="contained">
             Search
           </Button>
           <p className="text-black">List of accounts:</p>
@@ -114,6 +127,7 @@ export default function PromoteurView(): ReactElement {
                         type="checkbox"
                         name="account"
                         value={account}
+                        onChange={handleCheckedAccounts}
                       />{" "}
                       {account}
                     </li>
@@ -128,16 +142,43 @@ export default function PromoteurView(): ReactElement {
           ></textarea>
           <p className="text-black">Promotion link:</p>
           <input className="border-2 border-black text-black p-2"></input>
+          <div className="flex flex-row mt-4 justify-between">
+            <Button
+              variant="contained"
+              onClick={() => {
+                setModalOpen(false);
+                setSendingModalOpen(true);
+              }}
+            >
+              Create Promotion
+            </Button>
+            <Button variant="outlined" onClick={() => setModalOpen(false)}>
+              Cancel
+            </Button>
+          </div>
+        </div>
+      </Modal>
 
-          <Button className="mt-4" type="button">
-            Create Promotion
-          </Button>
+      <Modal
+        shouldCloseOnOverlayClick={false}
+        isOpen={sendingModalOpen}
+        onRequestClose={() => setModalOpen(false)}
+        style={customStyles}
+      >
+        <div className="flex flex-col text-black">
+          <p>
+            {checkedAccounts.map((account, i) => {
+              return <p>Sending promotion to: {account}</p>;
+            })}
+          </p>
           <Button
-            className="mt-4"
-            type="button"
-            onClick={() => setModalOpen(false)}
+            variant="contained"
+            onClick={() => {
+              setSendingModalOpen(false);
+              setCheckedAccounts([]);
+            }}
           >
-            Close Modal
+            Close
           </Button>
         </div>
       </Modal>
