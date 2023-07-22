@@ -1,6 +1,7 @@
 import { ReactElement, useState, useEffect } from "react";
 import ConversationListView from "./ConversationListView";
 import PromotionListView from "./PromotionListView";
+import { useConversations } from "../hooks/useConversations";
 import { useClient, useSetClient } from "../hooks/useClient";
 import { shortAddress } from "../util/shortAddress";
 import { Link } from "react-router-dom";
@@ -9,6 +10,9 @@ import { useDisconnect } from "wagmi";
 import Button from "@mui/material/Button";
 import Modal from "react-modal";
 import { fetchQuery } from "@airstack/airstack-react";
+import { sendMessage } from "../model/messages";
+import { startConversation } from "../model/conversations";
+import { ContentTypeText } from "@xmtp/xmtp-js";
 
 import { init, useLazyQuery } from "@airstack/airstack-react";
 
@@ -65,6 +69,8 @@ export default function PromoteurView(): ReactElement {
   const [checkedAccounts, setCheckedAccounts] = useState([]);
   const [accounts, setAccounts] = useState([]);
   const [searchAddress, setSearchAddress] = useState("");
+  const [promotionMessage, setPromotionMessage] = useState("");
+  const [promotionLink, setPromotionLink] = useState("");
 
   //Airstack
   init("8ff50c9197574148b92d2b0b44c9cd9e");
@@ -77,6 +83,21 @@ export default function PromoteurView(): ReactElement {
       setCopied(false);
     }, 2000);
   }
+
+  // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
+  const sendMessages = async () => {
+    checkedAccounts.forEach(async (account) => {
+      console.log("Starting conversation with " + account);
+      const conversation = await startConversation(client, account);
+      console.log("Sending message to " + account);
+      await sendMessage(
+        client,
+        conversation,
+        promotionMessage.replace("$link", promotionLink),
+        ContentTypeText
+      );
+    });
+  };
 
   // Add/Remove checked item from list
   const handleCheckedAccounts = (event: any) => {
@@ -226,16 +247,22 @@ export default function PromoteurView(): ReactElement {
           <p className="text-black">Promotion message:</p>
           <textarea
             name="description"
+            onChange={(e) => setPromotionMessage(e.target.value)}
             className="w-64 h-32 border-2 border-black text-black p-2"
           ></textarea>
           <p className="text-black">Promotion link:</p>
-          <input className="border-2 border-black text-black p-2"></input>
+          <input
+            id="promotionLink"
+            onChange={(e) => setPromotionLink(e.target.value)}
+            className="border-2 border-black text-black p-2"
+          ></input>
           <div className="flex flex-row mt-4 justify-between">
             <Button
               variant="contained"
               onClick={() => {
                 setModalOpen(false);
                 setSendingModalOpen(true);
+                sendMessages();
               }}
             >
               Create Promotion
