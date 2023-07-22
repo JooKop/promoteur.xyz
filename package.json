@@ -12,6 +12,7 @@
   },
   "homepage": "https://xmtp.github.io/xmtp-react-playground",
   "dependencies": {
+    "@airstack/airstack-react": "^0.4.5",
     "@animxyz/core": "^0.6.6",
     "@animxyz/react": "^0.6.7",
     "@emotion/react": "^11.11.1",
