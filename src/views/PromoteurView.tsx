@@ -5,7 +5,6 @@ import { useConversations } from "../hooks/useConversations";
 import { useClient, useSetClient } from "../hooks/useClient";
 import { shortAddress } from "../util/shortAddress";
 import { Link } from "react-router-dom";
-import Header from "../components/Header";
 import { useDisconnect } from "wagmi";
 import Button from "@mui/material/Button";
 import { LoadingButton } from "@mui/lab";
@@ -15,6 +14,8 @@ import { sendMessage } from "../model/messages";
 import { startConversation } from "../model/conversations";
 import { ContentTypeText } from "@xmtp/xmtp-js";
 import uuid from "react-uuid";
+import Header from "./Header";
+import Footer from "./Footer";
 
 import { init, useLazyQuery } from "@airstack/airstack-react";
 
@@ -267,27 +268,9 @@ export default function PromoteurView(): ReactElement {
 
   return (
     <div>
-      <Header>
-        <div className="flex justify-between">
-          <h1 className="text-amber-400 text-3xl">Promoteur</h1>
-          <div>
-            Hi {shortAddress(client.address)}{" "}
-            <button className="text-xs text-zinc-600" onClick={copy}>
-              {copied ? "Copied Address!" : "Copy Address"}
-            </button>
-          </div>
-          <div>
-            <button onClick={logout}>Logout</button>
-          </div>
-        </div>
-      </Header>
-
+      <Header />
       <div className="p-4 pt-20">
         <div className="flex flex-row">
-          <div className="border-r-2 p-4 pr-10 flex flex-col">
-            <p className="underline">Promotions</p>
-            <p className="underline">Analytics</p>
-          </div>
           <div className="pl-10 flex flex-col">
             <small className="flex justify-between"></small>
             All promotions
@@ -441,6 +424,7 @@ export default function PromoteurView(): ReactElement {
           </Button>
         </div>
       </Modal>
+      <Footer />
     </div>
   );
 }
