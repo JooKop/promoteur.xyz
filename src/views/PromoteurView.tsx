@@ -222,8 +222,11 @@ export default function PromoteurView(): ReactElement {
       if (data != null) {
         //Data has been retrieved. Fill accounts.
         const userList = data.Poaps?.Poap;
-        setExtraInfo("POAP: " + data.Poaps?.Poap[0].poapEvent.eventName);
-
+        try {
+          setExtraInfo("POAP: " + data.Poaps?.Poap[0].poapEvent.eventName);
+        } catch (e) {
+          console.log("error: " + e);
+        }
         if (userList?.length > 0) {
           accountList = userList.map((user: any) => {
             return user.owner.addresses[0];
