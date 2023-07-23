@@ -28,9 +28,12 @@ npm  install
 ```
 
 ## Run the frontend server
+Before running the frontend server, you must create a `.env` file to the root of the repository with the `VITE_AIRSTACK_API_KEY=<YOUR-AIRSTACK-API-KEY>` variable defined. Then proceed to run the dev server:
+
 ```bash
 npm  run  dev
 ```
+
 Open [http://localhost:5173](http://localhost:5173) in your browser to access the Promoteur website.
 
 ## Run the backend server
