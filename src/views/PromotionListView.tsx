@@ -8,7 +8,6 @@ import PromotionCellView from "./PromotionCellView";
 export default function PromotionListView({ promotions }): ReactElement {
   return (
     <div className="w-full">
-      {promotions?.length == 0 && <p>No Promotions yet.</p>}
       {promotions
         ? promotions.map((promotion, i) => (
             <PromotionCellView promotion={promotion} />

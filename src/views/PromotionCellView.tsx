@@ -21,13 +21,13 @@ export default function PromotionCellView({
           <img className="w-6 mr-2" src="envelope.png" />
           <span className="text-sm text-blue-700 dark:text-blue-500">
             {promotion.recipients}{" "}
-            {promotion.recipients > 1 ? "recipients" : "recipient"}
+            {promotion.recipients != 1 ? "recipients" : "recipient"}
           </span>
         </div>
         <div className="ml-10 flex flex-col items-center">
           <img className="w-6 mr-2" src="cursor.png" />
           <span className="text-sm text-blue-700 dark:text-blue-500">
-            {promotion.clicks} {promotion.clicks > 1 ? "clicks" : "click"}
+            {promotion.clicks} {promotion.clicks != 1 ? "clicks" : "click"}
           </span>
         </div>
       </div>
