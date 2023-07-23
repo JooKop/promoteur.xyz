@@ -21,13 +21,14 @@ import { init, useLazyQuery } from "@airstack/airstack-react";
 
 const customStyles = {
   content: {
-    top: "50%",
+    top: "40%",
     left: "50%",
     right: "auto",
     bottom: "auto",
     marginRight: "-50%",
     transform: "translate(-50%, -50%)",
     backgroundColor: "white",
+    borderRadius: "30px",
     width: 600,
   },
 };
@@ -272,7 +273,11 @@ export default function PromoteurView(): ReactElement {
       <div className="flex flex-row justify-center p-4 pt-8">
         <div className="w-full flex flex-row justify-center">
           <div className="w-2/5 flex flex-col items-center">
-            <p className="opacity-50 text-3xl mb-2">Your promotions</p>
+            <p className="opacity-50 text-3xl mb-2 text-center">
+              {promotions.length > 0
+                ? "Your promotions"
+                : "Create your first promotion!"}
+            </p>
             <PromotionListView promotions={promotions} />
             <br />
             <div className="w-full flex flex-row justify-center">
@@ -280,9 +285,11 @@ export default function PromoteurView(): ReactElement {
                 New Promotion
               </Button>
               <span className="w-2"> </span>
-              <Button variant="contained" onClick={getPromotionList}>
-                Refresh
-              </Button>
+              {promotions.length > 0 && (
+                <Button variant="contained" onClick={getPromotionList}>
+                  Refresh
+                </Button>
+              )}
             </div>
           </div>
         </div>
@@ -295,44 +302,54 @@ export default function PromoteurView(): ReactElement {
         style={customStyles}
       >
         <div className="flex flex-col">
-          <form>
-            <p className="text-black">Name:</p>
+          <div className="flex items-center">
+            <span className="text-xl text-blue-700 dark:text-blue-500">
+              Name
+            </span>
             <input
               onChange={(e) => setPromotionName(e.target.value)}
-              className="border-2 border-black text-black p-2"
+              className="w-96 ml-5 border-2 rounded-lg border-4 text-black p-2"
             ></input>
-            <p className="text-black">Targeting:</p>
-            <div className="flex flex-row">
-              <label className="text-black">
-                <input
-                  onClick={() => setSearchType("NFT")}
-                  className="mr-1"
-                  type="radio"
-                  name="filter"
-                  value="nft"
-                />
-                NFT
-              </label>
-              <label className="text-black">
-                <input
-                  onClick={() => setSearchType("POAP")}
-                  className="ml-4 mr-1"
-                  type="radio"
-                  name="filter"
-                  value="poap"
-                />
-                POAP
-              </label>
-            </div>
+          </div>
+          <div className="mt-2 flex items-center">
+            <span className="text-xl text-blue-700 dark:text-blue-500">
+              Targeting
+            </span>
+            <label className="ml-5 text-xl text-black">
+              <input
+                onClick={() => setSearchType("NFT")}
+                className="mr-1"
+                type="radio"
+                name="filter"
+                value="nft"
+              />
+              NFT
+            </label>
+            <label className="text-xl text-black">
+              <input
+                onClick={() => setSearchType("POAP")}
+                className="ml-4 mr-1"
+                type="radio"
+                name="filter"
+                value="poap"
+              />
+              POAP
+            </label>
+          </div>
+          <div className="mt-2">
             {searchType == "NFT" ? (
-              <p className="text-black">NFT Address:</p>
+              <span className="text-xl text-blue-700 dark:text-blue-500">
+                NFT Address
+              </span>
             ) : (
-              <p className="text-black">POAP eventId:</p>
+              <span className="text-xl text-blue-700 dark:text-blue-500">
+                POAP eventId
+              </span>
             )}
 
             <input
               onChange={(e) => setSearchAddress(e.target.value)}
-              className="border-2 border-black text-black p-2"
+              className="ml-5 mr-5 border-2 border-4 text-black p-2"
             ></input>
             <LoadingButton
               className="mt-2 p-4"
@@ -343,63 +360,77 @@ export default function PromoteurView(): ReactElement {
             >
               Search
             </LoadingButton>
-            <p className="text-black">{extraInfo}</p>
-            <p className="text-black">
-              List of accounts with XMTP enabled ({accounts.length}x):
-            </p>
-            <div className="border-2 h-32 overflow-y-auto">
-              <ul>
-                {accounts
-                  ? accounts.map((account, i) => (
-                      <li className="text-black">
-                        <input
-                          key={i}
-                          type="checkbox"
-                          name="account"
-                          value={account}
-                          onChange={handleCheckedAccounts}
-                        />{" "}
-                        {account}
-                      </li>
-                    ))
-                  : "No accounts found"}
-              </ul>
-            </div>
-            <p className="text-black">Promotion message:</p>
-            <textarea
-              name="description"
-              onChange={(e) => setPromotionMessage(e.target.value)}
-              className="w-64 h-32 border-2 border-black text-black p-2"
-            ></textarea>
-            <p className="text-black">Promotion link:</p>
-            <input
-              id="promotionLink"
-              onChange={(e) => setPromotionLink(e.target.value)}
-              className="border-2 border-black text-black p-2"
-            ></input>
-            <div className="flex flex-row mt-4 justify-between">
-              <Button
-                variant="contained"
-                onClick={() => {
-                  const uid = uuid();
-                  setModalOpen(false);
-                  setSendingModalOpen(true);
-                  createPromotion(
-                    uid,
-                    promotionName,
-                    checkedAccounts.length,
-                    promotionLink
-                  );
-                  sendMessages(uid);
-                }}
-              >
-                Create Promotion
-              </Button>
-              <Button variant="outlined" onClick={() => setModalOpen(false)}>
-                Cancel
-              </Button>
-            </div>
-          </form>
+          </div>
+          <span className="text-center mt-2 text-lg text-white bg-indigo-500 rounded-lg bac">
+            {extraInfo}
+          </span>
+          <span className="mt-2 text-xl text-blue-700 dark:text-blue-500">
+            List of accounts with XMTP enabled ({accounts.length}x)
+          </span>
+          <div className="border-4 h-32 overflow-y-auto">
+            <ul className="text-center">
+              {accounts
+                ? accounts.map((account, i) => (
+                    <li className="text-black">
+                      <input
+                        key={i}
+                        type="checkbox"
+                        name="account"
+                        value={account}
+                        onChange={handleCheckedAccounts}
+                      />{" "}
+                      {account}
+                    </li>
+                  ))
+                : "No accounts found"}
+            </ul>
+          </div>
+          <span className="mt-2 text-xl text-blue-700 dark:text-blue-500">
+            Promotion message
+          </span>
+          <textarea
+            name="description"
+            onChange={(e) => setPromotionMessage(e.target.value)}
+            className="w-full h-32 border-4 text-black p-2"
+          ></textarea>
+          <span className="mt-2 text-xl text-blue-700 dark:text-blue-500">
+            Promotion link
+          </span>
+          <input
+            id="promotionLink"
+            onChange={(e) => setPromotionLink(e.target.value)}
+            className="border-4 text-black p-2"
+          ></input>
+          <div className="flex flex-row mt-4 justify-between">
+            <Button
+              variant="contained"
+              onClick={() => {
+                const uid = uuid();
+                setModalOpen(false);
+                setSendingModalOpen(true);
+                createPromotion(
+                  uid,
+                  promotionName,
+                  checkedAccounts.length,
+                  promotionLink
+                );
+                sendMessages(uid);
+              }}
+            >
+              Create Promotion
+            </Button>
+            <Button
+              variant="outlined"
+              onClick={() => {
+                setModalOpen(false);
+                setCheckedAccounts([]);
+                setAccounts([]);
+                setExtraInfo("");
+              }}
+            >
+              Cancel
+            </Button>
+          </div>
         </div>
       </Modal>
 
@@ -410,20 +441,25 @@ export default function PromoteurView(): ReactElement {
         style={customStyles}
       >
         <div className="flex flex-col text-black">
-          <p>Sending promotion to:</p>
-          <p>
+          <span className="mb-5 text-center mt-2 text-xl text-blue-700 dark:text-blue-500">
+            Promotion sent to the following accounts
+          </span>
+          <p className="text-center text-xl">
             {checkedAccounts.map((account, i) => {
               return <p>{account}</p>;
             })}
           </p>
+          <span className="mt-5"></span>
           <Button
             variant="contained"
             onClick={() => {
               setSendingModalOpen(false);
               setCheckedAccounts([]);
+              setAccounts([]);
+              setExtraInfo("");
             }}
           >
-            Close
+            OK
           </Button>
         </div>
       </Modal>
