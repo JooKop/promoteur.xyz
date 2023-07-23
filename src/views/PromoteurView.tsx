@@ -8,6 +8,7 @@ import { Link } from "react-router-dom";
 import Header from "../components/Header";
 import { useDisconnect } from "wagmi";
 import Button from "@mui/material/Button";
+import { LoadingButton } from "@mui/lab";
 import Modal from "react-modal";
 import { fetchQuery } from "@airstack/airstack-react";
 import { sendMessage } from "../model/messages";
@@ -31,7 +32,7 @@ const customStyles = {
 };
 
 const nftQuery = `
-query TokenHoldersAndImages {
+query TokenHolders {
   TokenNfts(
     input: {filter: {address: {_eq: "$ADDRESS"}}, blockchain: ethereum, limit: 200}
   ) {
@@ -41,13 +42,33 @@ query TokenHoldersAndImages {
           addresses
         }
       }
+      metaData {
+        name
+      }
     }
   }
 }
 `;
+
+const poapQuery = `
+query POAPOwningAddresses {
+  Poaps(input: {filter: {eventId: {_eq: "$eventId"}}, blockchain: ALL, limit: 200}) {
+    Poap {
+     owner {
+      addresses
+     }
+     poapEvent{
+      eventName
+     }
+    }
+  }
+}
+`;
+
 //0x88b40592ce79a76eb14fec1ef9d21fbefcd9dffa
+//140955
 const xmtpEnabledQuery = `
-query BulkFetchPrimaryENSandXMTP($address: [Identity!]) {
+query FetchXMTPUsers($address: [Identity!]) {
   XMTPs(input: {blockchain: ALL, limit: 200, filter: {owner: {_in: $address}}}) {
     XMTP {
       isXMTPEnabled
@@ -75,6 +96,9 @@ export default function PromoteurView(): ReactElement {
   const [promotionName, setPromotionName] = useState("");
   const [promotions, setPromotions] = useState([]);
   const [promotionsLoaded, setPromotionsLoaded] = useState(false);
+  const [searchType, setSearchType] = useState("NFT");
+  const [extraInfo, setExtraInfo] = useState("");
+  const [searching, setSearching] = useState(false);
 
   const getPromotionList = () => {
     // Fetch all promotions
@@ -89,7 +113,7 @@ export default function PromoteurView(): ReactElement {
   }
 
   //Airstack
-  init("8ff50c9197574148b92d2b0b44c9cd9e");
+  init("c21d901821034ac1b49008246b04000d");
   const variables = {};
 
   function copy() {
@@ -154,39 +178,79 @@ export default function PromoteurView(): ReactElement {
   };
 
   const handleSearch = async (event: any) => {
-    const { data, error } = await fetchQuery(
-      nftQuery.replace("$ADDRESS", searchAddress)
-    );
+    setSearching(true);
     let accountList = [];
+    setAccounts(accountList);
     let xmtpVariables = {};
-    if (data != null) {
-      //Data has been retrieved. Fill accounts.
-      const userList = data.TokenNfts?.TokenNft;
+    if (searchType === "NFT") {
+      const { data, error } = await fetchQuery(
+        nftQuery.replace("$ADDRESS", searchAddress)
+      );
+      if (data != null) {
+        //Data has been retrieved. Fill accounts.
+        const userList = data.TokenNfts?.TokenNft;
+        setExtraInfo("NFT: " + data.TokenNfts?.TokenNft[0].metaData.name);
+        if (userList?.length > 0) {
+          accountList = userList.map((user: any) => {
+            return user.tokenBalances[0].owner.addresses[0];
+          });
+          //Now figure out which of these have xmtp enabled
+          const xmtpVariables = { address: accountList };
+          console.log("Lengthi: " + accountList.length);
+          const { data, error } = await fetchQuery(
+            xmtpEnabledQuery,
+            xmtpVariables
+          );
 
-      if (userList?.length > 0) {
-        accountList = userList.map((user: any) => {
-          return user.tokenBalances[0].owner.addresses[0];
-        });
-        //Now figure out which of these have xmtp enabled
-        const xmtpVariables = { address: accountList };
-        console.log("Lengthi: " + accountList.length);
-        const { data, error } = await fetchQuery(
-          xmtpEnabledQuery,
-          xmtpVariables
-        );
+          const xmtpList = data.XMTPs?.XMTP;
 
-        const xmtpList = data.XMTPs?.XMTP;
+          if (xmtpList?.length > 0) {
+            const accountList = xmtpList.map((user: any) => {
+              return user.owner.addresses[0];
+            });
+            setAccounts(accountList.sort());
+          }
+        } else {
+          setAccounts([]);
+        }
+      }
+    } else if (searchType === "POAP") {
+      const { data, error } = await fetchQuery(
+        poapQuery.replace("$eventId", searchAddress)
+      );
 
-        if (xmtpList.length > 0) {
-          const accountList = xmtpList.map((user: any) => {
+      if (data != null) {
+        //Data has been retrieved. Fill accounts.
+        const userList = data.Poaps?.Poap;
+        setExtraInfo("POAP: " + data.Poaps?.Poap[0].poapEvent.eventName);
+
+        if (userList?.length > 0) {
+          accountList = userList.map((user: any) => {
             return user.owner.addresses[0];
           });
-          setAccounts(accountList);
+
+          //Now figure out which of these have xmtp enabled
+          const xmtpVariables = { address: accountList };
+          console.log("Lengthi: " + accountList.length);
+          const { data, error } = await fetchQuery(
+            xmtpEnabledQuery,
+            xmtpVariables
+          );
+
+          const xmtpList = data.XMTPs?.XMTP;
+
+          if (xmtpList?.length > 0) {
+            const accountList = xmtpList.map((user: any) => {
+              return user.owner.addresses[0];
+            });
+            setAccounts(accountList.sort());
+          }
+        } else {
+          setAccounts([]);
         }
-      } else {
-        setAccounts([]);
       }
     }
+    setSearching(false);
   };
 
   const { disconnectAsync } = useDisconnect();
@@ -242,91 +306,111 @@ export default function PromoteurView(): ReactElement {
         style={customStyles}
       >
         <div className="flex flex-col">
-          <p className="text-black">Name:</p>
-          <input
-            onChange={(e) => setPromotionName(e.target.value)}
-            className="border-2 border-black text-black p-2"
-          ></input>
-          <p className="text-black">Targeting:</p>
-          <div className="flex flex-row">
-            <label className="text-black">
-              <input className="mr-1" type="radio" name="filter" value="nft" />
-              NFT
-            </label>
-            <label className="text-black">
-              <input
-                className="ml-4 mr-1"
-                type="radio"
-                name="filter"
-                value="poap"
-              />
-              POAP
-            </label>
-          </div>
-          <p className="text-black">Address:</p>
-          <input
-            onChange={(e) => setSearchAddress(e.target.value)}
-            className="border-2 border-black text-black p-2"
-          ></input>
-          <Button className="mt-2" variant="contained" onClick={handleSearch}>
-            Search
-          </Button>
+          <form>
+            <p className="text-black">Name:</p>
+            <input
+              onChange={(e) => setPromotionName(e.target.value)}
+              className="border-2 border-black text-black p-2"
+            ></input>
+            <p className="text-black">Targeting:</p>
+            <div className="flex flex-row">
+              <label className="text-black">
+                <input
+                  onClick={() => setSearchType("NFT")}
+                  className="mr-1"
+                  type="radio"
+                  name="filter"
+                  value="nft"
+                />
+                NFT
+              </label>
+              <label className="text-black">
+                <input
+                  onClick={() => setSearchType("POAP")}
+                  className="ml-4 mr-1"
+                  type="radio"
+                  name="filter"
+                  value="poap"
+                />
+                POAP
+              </label>
+            </div>
+            {searchType == "NFT" ? (
+              <p className="text-black">NFT Address:</p>
+            ) : (
+              <p className="text-black">POAP eventId:</p>
+            )}
 
-          <p className="text-black">
-            List of accounts with XMTP enabled ({accounts.length}x):
-          </p>
-          <div className="border-2 h-32 overflow-y-auto">
-            <ul>
-              {accounts
-                ? accounts.map((account, i) => (
-                    <li className="text-black">
-                      <input
-                        key={i}
-                        type="checkbox"
-                        name="account"
-                        value={account}
-                        onChange={handleCheckedAccounts}
-                      />{" "}
-                      {account}
-                    </li>
-                  ))
-                : "No accounts found"}
-            </ul>
-          </div>
-          <p className="text-black">Promotion message:</p>
-          <textarea
-            name="description"
-            onChange={(e) => setPromotionMessage(e.target.value)}
-            className="w-64 h-32 border-2 border-black text-black p-2"
-          ></textarea>
-          <p className="text-black">Promotion link:</p>
-          <input
-            id="promotionLink"
-            onChange={(e) => setPromotionLink(e.target.value)}
-            className="border-2 border-black text-black p-2"
-          ></input>
-          <div className="flex flex-row mt-4 justify-between">
-            <Button
+            <input
+              onChange={(e) => setSearchAddress(e.target.value)}
+              className="border-2 border-black text-black p-2"
+            ></input>
+            <LoadingButton
+              className="mt-2 p-4"
               variant="contained"
-              onClick={() => {
-                const uid = uuid();
-                setModalOpen(false);
-                setSendingModalOpen(true);
-                createPromotion(
-                  uid,
-                  promotionName,
-                  checkedAccounts.length,
-                  promotionLink
-                );
-                sendMessages(uid);
-              }}
+              onClick={handleSearch}
+              loading={searching!!}
+              loadingPosition="end"
             >
-              Create Promotion
-            </Button>
-            <Button variant="outlined" onClick={() => setModalOpen(false)}>
-              Cancel
-            </Button>
-          </div>
+              Search
+            </LoadingButton>
+            <p className="text-black">{extraInfo}</p>
+            <p className="text-black">
+              List of accounts with XMTP enabled ({accounts.length}x):
+            </p>
+            <div className="border-2 h-32 overflow-y-auto">
+              <ul>
+                {accounts
+                  ? accounts.map((account, i) => (
+                      <li className="text-black">
+                        <input
+                          key={i}
+                          type="checkbox"
+                          name="account"
+                          value={account}
+                          onChange={handleCheckedAccounts}
+                        />{" "}
+                        {account}
+                      </li>
+                    ))
+                  : "No accounts found"}
+              </ul>
+            </div>
+            <p className="text-black">Promotion message:</p>
+            <textarea
+              name="description"
+              onChange={(e) => setPromotionMessage(e.target.value)}
+              className="w-64 h-32 border-2 border-black text-black p-2"
+            ></textarea>
+            <p className="text-black">Promotion link:</p>
+            <input
+              id="promotionLink"
+              onChange={(e) => setPromotionLink(e.target.value)}
+              className="border-2 border-black text-black p-2"
+            ></input>
+            <div className="flex flex-row mt-4 justify-between">
+              <Button
+                variant="contained"
+                onClick={() => {
+                  const uid = uuid();
+                  setModalOpen(false);
+                  setSendingModalOpen(true);
+                  createPromotion(
+                    uid,
+                    promotionName,
+                    checkedAccounts.length,
+                    promotionLink
+                  );
+                  sendMessages(uid);
+                }}
+              >
+                Create Promotion
+              </Button>
+              <Button variant="outlined" onClick={() => setModalOpen(false)}>
+                Cancel
+              </Button>
+            </div>
+          </form>
         </div>
       </Modal>
 
