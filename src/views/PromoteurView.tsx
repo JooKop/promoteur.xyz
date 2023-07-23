@@ -114,8 +114,7 @@ export default function PromoteurView(): ReactElement {
     setPromotionsLoaded(true);
   }
 
-  //Airstack
-  init("c21d901821034ac1b49008246b04000d");
+  init(import.meta.env.VITE_AIRSTACK_API_KEY);
   const variables = {};
 
   function copy() {
