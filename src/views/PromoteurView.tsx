@@ -36,7 +36,7 @@ const customStyles = {
 const nftQuery = `
 query TokenHolders {
   TokenNfts(
-    input: {filter: {address: {_eq: "$ADDRESS"}}, blockchain: ethereum, limit: 200}
+    input: {filter: {address: {_eq: "$ADDRESS"}}, blockchain: ALL, limit: 200}
   ) {
     TokenNft {
       tokenBalances {
@@ -148,16 +148,6 @@ export default function PromoteurView(): ReactElement {
   const sendMessages = async (uid) => {
     checkedAccounts.forEach(async (account) => {
       const conversation = await startConversation(client, account);
-      console.log("Convo: " + conversation);
-      console.log("Sending message to " + account);
-      console.log(
-        "Starting conversation with " +
-          conversation.id?.toString() +
-          ", " +
-          conversation.topic +
-          ", " +
-          conversation.title
-      );
       await sendMessage(
         client,
         conversation,
