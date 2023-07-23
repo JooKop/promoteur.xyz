@@ -1,7 +1,7 @@
 
 # <img src="./public/megaphone.png" height="60" valign="middle" alt="Gasdrop" /> Promoteur
 ## Introduction
-Promoteur is a Web3 promotion tool that was developed during the ETHGlobal Paris hackathon. It utilizes various Web3 technologies, such as Airstack and XMTP to provide targeted marketing based on NFT and POAP ownership. The possibilities are limitless and the tool will be expanded rapidly in the near future.
+Promoteur is a Web3 promotion tool that was developed during the ETHGlobal Paris hackathon. It utilizes various Web3 technologies, such as [Airstack](https://www.airstack.xyz/) and [XMTP](https://xmtp.org/) to provide targeted marketing based on NFT and POAP ownership. The possibilities are limitless and the tool will be expanded rapidly in the near future.
 <img src="./example.png"/>
 
 ## How does it work
