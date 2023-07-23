@@ -269,18 +269,21 @@ export default function PromoteurView(): ReactElement {
   return (
     <div>
       <Header />
-      <div className="p-4 pt-20">
-        <div className="flex flex-row">
-          <div className="pl-10 flex flex-col">
-            <small className="flex justify-between"></small>
-            All promotions
-            <Button variant="contained" onClick={getPromotionList}>
-              Refresh
-            </Button>
+      <div className="flex flex-row justify-center p-4 pt-8">
+        <div className="w-full flex flex-row justify-center">
+          <div className="w-2/5 flex flex-col items-center">
+            <p className="opacity-50 text-3xl mb-2">Your promotions</p>
             <PromotionListView promotions={promotions} />
-            <Button onClick={setModalOpen} variant="contained">
-              New Promotion
-            </Button>
+            <br />
+            <div className="w-full flex flex-row justify-center">
+              <Button onClick={setModalOpen} variant="contained">
+                New Promotion
+              </Button>
+              <span className="w-2"> </span>
+              <Button variant="contained" onClick={getPromotionList}>
+                Refresh
+              </Button>
+            </div>
           </div>
         </div>
       </div>
