@@ -15,7 +15,10 @@ Promoteur is a Web3 promotion tool that was developed during the ETHGlobal Paris
 ## Technical details
 Frontend built with React, utilizing the [XMTP JavaScript SDK](https://github.com/xmtp/xmtp-js) playground and the [Airstack Web SDK](https://github.com/Airstack-xyz/airstack-web-sdk). 
 
-Backend built with Python (Flask), Docker and PostgreSQL.
+- The powerful Airstack API is used to fetch wallet addresses of users that own specific NFTs or POAPs. In a subsequent query, the list of wallets is then filtered to contain only wallets of XMTP users.
+- The innovative XMTP messaging protocol is used to deliver promotion messages to the users of the aforementioned wallets. The promotion messages may contain a promotional link to any website, and the clicks are tracked using the custom-built backend server.
+
+Backend built with Python (Flask), Docker and PostgreSQL. It's used by the frontend to create new promotions and as a relay server to track clicks on promotion links.
 
 Everything can be run locally using the instructions below.
 
